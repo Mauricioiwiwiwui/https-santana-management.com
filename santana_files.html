@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Santana Files</title>
+<style>
+:root{--bg:#0b0f14;--card:#121923;--line:#263242;--text:#eef3f8;--muted:#9aa9b8;--accent:#20d67b;--danger:#ff5d6c}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#080c11,#111923);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1050px;margin:auto;padding:20px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
+.brand{font-weight:800;font-size:22px}.brand span{color:var(--accent)}button,input{font:inherit}button{border:0;border-radius:10px;padding:11px 14px;cursor:pointer;background:var(--accent);color:#06120b;font-weight:700}
+button.secondary{background:#202b39;color:var(--text)}button.danger{background:var(--danger);color:#fff}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:rgba(18,25,35,.94);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 15px 45px #0004}
+h1,h2,h3{margin:0 0 10px}.muted{color:var(--muted)}label{display:block;margin:12px 0 6px;color:#c8d2dc}input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0b1119;color:var(--text)}
+.row{display:flex;gap:10px;flex-wrap:wrap}.hidden{display:none!important}.file{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;margin-top:9px}.file small{color:var(--muted);display:block}.badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#183c2a;color:#7af0ae}.msg{padding:10px 12px;background:#0d141d;border-radius:12px;margin:8px 0}.notice{padding:12px;border-radius:12px;background:#14251d;border:1px solid #245f43;color:#b8f7d1;margin:12px 0}.error{background:#321820;border-color:#73313d;color:#ffc3ca}.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs button{background:#182230;color:#bfcbd7}.tabs button.active{background:var(--accent);color:#06120b}
+@media(max-width:720px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Santana <span>Files</span></div>
+    <div class="row"><button class="secondary" onclick="show('home')">Inicio</button><button id="logout" class="secondary hidden" onclick="logout()">Cerrar sesión</button></div>
+  </div>
+
+  <section id="home" class="grid">
+    <div class="card">
+      <h2>👤 Acceso de usuario</h2>
+      <p class="muted">Cada persona entra con su propio usuario y contraseña.</p>
+      <label>Usuario</label><input id="loginUser" autocomplete="username">
+      <label>Contraseña</label><input id="loginPass" type="password" autocomplete="current-password">
+      <div class="row" style="margin-top:14px"><button onclick="login()">Entrar</button></div>
+      <div id="loginMsg"></div>
+    </div>
+    <div class="card">
+      <h2>🛠️ Administrador</h2>
+      <p class="muted">Crea personas, revisa archivos y administra las cuentas.</p>
+      <label>Contraseña de administrador</label><input id="adminPass" type="password">
+      <button style="margin-top:14px" onclick="adminLogin()">Abrir panel</button>
+      <div id="adminMsg"></div>
+    </div>
+  </section>
+
+  <section id="userPanel" class="hidden">
+    <div class="card">
+      <h2 id="userTitle"></h2>
+      <p class="muted">Tu espacio privado de archivos.</p>
+      <div class="notice">🔐 Los archivos de este espacio están separados de los demás usuarios.</div>
+      <div class="row">
+        <input id="fileInput" type="file" multiple style="max-width:420px">
+        <button onclick="uploadFiles()">📤 Subir archivos</button>
+      </div>
+      <h3 style="margin-top:20px">📁 Mis archivos</h3>
+      <div id="userFiles"></div>
+      <h3 style="margin-top:20px">💬 Mensajes</h3>
+      <div id="userMessages"></div>
+      <div class="row" style="margin-top:10px"><input id="userMessage" placeholder="Escribe un mensaje..."><button onclick="sendUserMessage()">Enviar</button></div>
+    </div>
+  </section>
+
+  <section id="adminPanel" class="hidden">
+    <div class="tabs"><button id="tabPeople" class="active" onclick="adminTab('people')">Personas</button><button id="tabRoom" onclick="adminTab('room')">Sala seleccionada</button></div>
+    <div id="peopleTab" class="card">
+      <h2>👥 Personas</h2>
+      <div class="grid">
+        <div>
+          <label>Nombre</label><input id="newName" placeholder="Juan Pérez">
+          <label>Usuario</label><input id="newUser" placeholder="juanperez">
+          <label>Contraseña</label><input id="newPass" placeholder="Temporal123">
+          <button style="margin-top:14px" onclick="createUser()">➕ Crear persona</button>
+        </div>
+        <div><h3>Cuentas creadas</h3><div id="peopleList"></div></div>
+      </div>
+    </div>
+    <div id="roomTab" class="card hidden">
+      <h2 id="roomTitle">Selecciona una persona</h2>
+      <div id="adminFiles"></div>
+      <h3 style="margin-top:20px">💬 Conversación</h3>
+      <div id="adminMessages"></div>
+      <div class="row"><input id="adminMessage" placeholder="Responder..."><button onclick="sendAdminMessage()">Enviar</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const DB='santana-files-mvp-v1';
+let state={users:[],files:[],messages:[],admin:false,currentUser:null,selectedUser:null};
+
+function save(){localStorage.setItem(DB,JSON.stringify(state))}
+function load(){try{let x=JSON.parse(localStorage.getItem(DB));if(x)state={...state,...x}}catch{} if(!state.users.length) state.users=[{id:'demo',name:'Usuario Demo',user:'demo',pass:'1234'}]; save()}
+function show(id){for(const x of ['home','userPanel','adminPanel'])document.getElementById(x).classList.add('hidden');document.getElementById(id).classList.remove('hidden')}
+function fmt(n){return n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(1)} KB`:`${(n/1048576).toFixed(1)} MB`}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function login(){let u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;let x=state.users.find(a=>a.user===u&&a.pass===p);if(!x){document.getElementById('loginMsg').innerHTML='<div class="notice error">Usuario o contraseña incorrectos.</div>';return}state.currentUser=x.id;state.admin=false;document.getElementById('logout').classList.remove('hidden');document.getElementById('userTitle').textContent='👤 '+x.name;show('userPanel');renderUser()}
+function adminLogin(){if(document.getElementById('adminPass').value!=='admin123'){document.getElementById('adminMsg').innerHTML='<div class="notice error">En esta demo la contraseña es admin123. Cámbiala al conectar el backend.</div>';return}state.admin=true;state.currentUser=null;document.getElementById('logout').classList.remove('hidden');show('adminPanel');renderPeople()}
+function logout(){state.admin=false;state.currentUser=null;state.selectedUser=null;document.getElementById('logout').classList.add('hidden');show('home')}
+function createUser(){let name=newName.value.trim(),user=newUser.value.trim(),pass=newPass.value;if(!name||!user||!pass)return alert('Completa nombre, usuario y contraseña.');if(state.users.some(x=>x.user===user))return alert('Ese usuario ya existe.');state.users.push({id:crypto.randomUUID(),name,user,pass});save();newName.value=newUser.value=newPass.value='';renderPeople()}
+function renderPeople(){peopleList.innerHTML=state.users.map(x=>`<div class="file"><div><b>${esc(x.name)}</b><small>@${esc(x.user)}</small></div><div class="row"><button class="secondary" onclick="selectUser('${x.id}')">Abrir</button></div></div>`).join('')}
+function selectUser(id){state.selectedUser=id;adminTab('room');renderRoom()}
+function adminTab(t){peopleTab.classList.toggle('hidden',t!=='people');roomTab.classList.toggle('hidden',t!=='room');tabPeople.classList.toggle('active',t==='people');tabRoom.classList.toggle('active',t==='room');if(t==='room')renderRoom()}
+async function uploadFiles(){let input=document.getElementById('fileInput'),u=state.users.find(x=>x.id===state.currentUser);for(const f of input.files){let data=await readFile(f);state.files.push({id:crypto.randomUUID(),userId:u.id,name:f.name,size:f.size,type:f.type,data,at:new Date().toISOString()})}input.value='';save();renderUser()}
+function readFile(f){return new Promise((res,rej)=>{let r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)})}
+function fileCard(f,admin=false){return `<div class="file"><div>📎 <b>${esc(f.name)}</b><small>${fmt(f.size)} · ${new Date(f.at).toLocaleString()}</small></div><div class="row"><a href="${f.data}" download="${esc(f.name)}"><button>📥 Baixar</button></a>${admin?`<button class="danger" onclick="deleteFile('${f.id}')">Excluir</button>`:''}</div></div>`}
+function renderUser(){let fs=state.files.filter(f=>f.userId===state.currentUser);userFiles.innerHTML=fs.length?fs.map(f=>fileCard(f)).join(''):'<p class="muted">Todavía no hay archivos.</p>';let ms=state.messages.filter(m=>m.userId===state.currentUser);userMessages.innerHTML=ms.length?ms.map(m=>`<div class="msg"><b>${m.from==='admin'?'Santana Management':'Tú'}</b><br>${esc(m.text)}<small class="muted"> · ${new Date(m.at).toLocaleString()}</small></div>`).join(''):'<p class="muted">Sin mensajes.</p>'}
+function renderRoom(){let u=state.users.find(x=>x.id===state.selectedUser);if(!u){roomTitle.textContent='Selecciona una persona';adminFiles.innerHTML='';adminMessages.innerHTML='';return}roomTitle.textContent='📂 '+u.name+' · @'+u.user;let fs=state.files.filter(f=>f.userId===u.id);adminFiles.innerHTML=fs.length?fs.map(f=>fileCard(f,true)).join(''):'<p class="muted">No hay archivos.</p>';let ms=state.messages.filter(m=>m.userId===u.id);adminMessages.innerHTML=ms.length?ms.map(m=>`<div class="msg"><b>${m.from==='admin'?'Tú':'Usuario'}</b><br>${esc(m.text)}<small class="muted"> · ${new Date(m.at).toLocaleString()}</small></div>`).join(''):'<p class="muted">Sin mensajes.</p>'}
+function deleteFile(id){state.files=state.files.filter(f=>f.id!==id);save();renderRoom()}
+function sendUserMessage(){let t=userMessage.value.trim();if(!t)return;state.messages.push({id:crypto.randomUUID(),userId:state.currentUser,from:'user',text:t,at:new Date().toISOString()});userMessage.value='';save();renderUser()}
+function sendAdminMessage(){let t=adminMessage.value.trim();if(!t||!state.selectedUser)return;state.messages.push({id:crypto.randomUUID(),userId:state.selectedUser,from:'admin',text:t,at:new Date().toISOString()});adminMessage.value='';save();renderRoom()}
+load();show('home');
+</script>
+</body>
+</html>
