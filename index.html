@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Santana Files</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><b>Santana <span>Files</span></b><button id="logout" class="ghost hidden">Cerrar sesión</button></header>
+<main>
+<section id="login" class="card">
+<h1>🔐 Santana Files</h1><p>Accede a tu espacio privado para enviar y recibir archivos.</p>
+<input id="email" type="email" placeholder="Correo electrónico">
+<input id="password" type="password" placeholder="Contraseña">
+<button id="loginBtn">Entrar</button>
+<p id="status"></p>
+</section>
+
+<section id="app" class="hidden">
+<div class="card">
+<h2 id="welcome"></h2>
+<p class="muted">Tus archivos se guardan en la nube y pueden verse desde otros dispositivos.</p>
+<label class="upload">📤 Seleccionar archivos<input id="files" type="file" multiple hidden></label>
+<div id="fileList"></div>
+<h3>💬 Mensajes</h3>
+<div id="messages"></div>
+<div class="send"><input id="message" placeholder="Escribe un mensaje..."><button id="sendBtn">Enviar</button></div>
+</div>
+</section>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
